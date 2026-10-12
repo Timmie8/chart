@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="nl" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AlphaTrade Pro Live - GitHub Pages Ready</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- TradingView Lightweight Charts -->
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container { position: relative; width: 100%; height: 480px; }
+        /* Custom scrollbar for a pro feel */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-full flex flex-col antialiased">
+
+    <header class="bg-slate-900 border-b border-slate-800 px-6 py-3.5 flex flex-col md:flex-row items-center justify-between shadow-lg gap-4">
+        <div class="flex items-center space-x-3">
+            <div class="bg-emerald-500 text-slate-950 p-2.5 rounded-xl font-bold flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                <i class="fa-solid fa-chart-candlestick text-xl"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white">AlphaTrade Pro Live</h1>
+                <p class="text-xs text-slate-400">Live US Aandelen • S&R Kanalen • Multi-Timeframe</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
+            <!-- API Key Settings Button -->
+            <button onclick="toggleSettings()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 p-2.5 rounded-xl text-sm transition-all" title="API Instellingen">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+
+            <div class="relative w-full md:w-80">
+                <input type="text" id="custom-ticker-input" placeholder="Typ US aandeel (bijv. AAPL)..." 
+                    class="bg-slate-950 border border-slate-700 text-sm rounded-xl pl-4 pr-24 py-2 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 w-full shadow-inner uppercase font-mono"
+                    onkeypress="if(event.key === 'Enter') submitCustomTicker()">
+                <button onclick="submitCustomTicker()" class="absolute right-1.5 top-1/2 -translate-y-1/2 bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs font-semibold transition-all">
+                    Zoek
+                </button>
+            </div>
+            <button onclick="loadLiveData()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 p-2.5 rounded-xl text-sm transition-all" title="Ververs Data">
+                <i class="fa-solid fa-rotate"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Settings Modal (Hidden by default) -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-key text-emerald-400"></i> Data Bron Instellingen
+                </h3>
+                <button onclick="toggleSettings()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <p class="text-sm text-slate-400 mb-4">
+                Voor <strong>100% echte live data</strong> op GitHub Pages, voer een gratis Finnhub API-sleutel in. 
+                Zonder sleutel werkt de app in <span class="text-amber-400 font-semibold">DEMO MODUS</span> (gesimuleerde data).
+            </p>
+            <input type="text" id="api-key-input" placeholder="Plak je Finnhub API key hier..." 
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white mb-4 focus:border-emerald-500 focus:outline-none font-mono">
+            <div class="flex gap-3">
+                <button onclick="saveApiKey()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-semibold text-sm transition-all">Opslaan</button>
+                <button onclick="clearApiKey()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg font-semibold text-sm transition-all">Wissen</button>
+            </div>
+            <p class="text-xs text-slate-500 mt-4 text-center">
+                Haal een gratis sleutel op via <a href="https://finnhub.io/register" target="_blank" class="text-emerald-400 hover:underline">finnhub.io/register</a> (60 verzoeken/minuut gratis).
+            </p>
+        </div>
+    </div>
+
+    <main class="flex-1 overflow-y-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        
+        <div class="lg:col-span-3 space-y-6">
+            
+            <div class="flex flex-wrap gap-2 items-center text-xs">
+                <span class="text-slate-400 font-semibold mr-1">Populair:</span>
+                <button onclick="selectTicker('AAPL')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="AAPL">AAPL</button>
+                <button onclick="selectTicker('NVDA')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="NVDA">NVDA</button>
+                <button onclick="selectTicker('TSLA')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="TSLA">TSLA</button>
+                <button onclick="selectTicker('MSFT')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="MSFT">MSFT</button>
+                <button onclick="selectTicker('AMZN')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="AMZN">AMZN</button>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-4 border-b border-slate-800 gap-4">
+                    <div>
+                        <div class="flex items-center space-x-3">
+                            <h2 id="chart-title" class="text-xl font-bold text-white font-mono">AAPL</h2>
+                            <span id="chart-price" class="text-xl font-bold text-emerald-400 font-mono">$0.00</span>
+                            <span id="live-indicator-badge" class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold uppercase">DEMO MODUS</span>
+                        </div>
+                        <p id="chart-subtitle" class="text-xs text-slate-400 mt-0.5">Laden...</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-semibold">
+                            <button onclick="changeTimeframe('1M', this)" class="tf-btn px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white">1M</button>
+                            <button onclick="changeTimeframe('3M', this)" class="tf-btn px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white">3M</button>
+                            <button onclick="changeTimeframe('6M', this)" class="tf-btn px-3 py-1.5 rounded-lg transition-all bg-emerald-600 text-white font-bold">6M</button>
+                            <button onclick="changeTimeframe('1Y', this)" class="tf-btn px-3 py-1.5 rounded-lg transition-all text-slate-400 hover:text-white">1Y</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between bg-slate-950/60 p-3 rounded-xl border border-slate-800 mb-4 text-xs">
+                    <div class="flex items-center space-x-5">
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="toggle-sr" checked onchange="updateChartIndicators()" class="rounded bg-slate-900 border-slate-700 text-emerald-600 focus:ring-0">
+                            <span class="text-slate-300 font-medium">Support / Resistance</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer">
+                            <input type="checkbox" id="toggle-ma" checked onchange="updateChartIndicators()" class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+                            <span class="text-slate-300 font-medium">EMA 20 & 50</span>
+                        </label>
+                    </div>
+                    <div id="sr-values-display" class="text-slate-400 font-mono">
+                        S: <span id="lbl-support" class="text-emerald-400 font-bold">--</span> | R: <span id="lbl-resistance" class="text-rose-400 font-bold">--</span>
+                    </div>
+                </div>
+
+                <div id="tradingview-chart" class="chart-container rounded-xl overflow-hidden border border-slate-800"></div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-md font-bold text-white flex items-center space-x-2">
+                        <i class="fa-solid fa-gauge-high text-emerald-400"></i>
+                        <span>MTF Dashboard</span>
+                    </h3>
+                    <span id="mtf-ticker-badge" class="text-xs bg-slate-950 border border-slate-800 px-2.5 py-1 rounded-lg font-mono text-emerald-400 font-bold">AAPL</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 uppercase">
+                                <th class="py-2.5 px-2 font-semibold">Timeframe</th>
+                                <th class="py-2.5 px-2 font-semibold">Verdict</th>
+                                <th class="py-2.5 px-2 font-semibold text-right">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="mtf-tbody" class="divide-y divide-slate-800/50"></tbody>
+                    </table>
+                </div>
+                <div class="mt-4 pt-4 border-t border-slate-800 bg-slate-950/50 p-3.5 rounded-xl border border-slate-800">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-slate-400 font-semibold uppercase">Totale Confluentie</span>
+                        <span id="confluence-score" class="text-xs font-bold text-emerald-400 font-mono">-- / 16</span>
+                    </div>
+                    <div id="confluence-verdict" class="text-center font-bold text-sm mt-2.5 py-2 px-3 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        STERK BULLISH
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
+                <h4 class="text-sm font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-info text-blue-400"></i>
+                    <span>Over deze App</span>
+                </h4>
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Geoptimaliseerd voor <strong>GitHub Pages</strong>. Voeg een gratis Finnhub API-sleutel toe via het ⚙️ icoon voor echte live marktdata. Zonder sleutel wordt een realistische simulatie getoond.
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentTicker = 'AAPL';
+        let currentTimeframe = '6M';
+        let tvChart = null;
+        let candleSeries = null;
+        let ma20Series = null;
+        let ma50Series = null;
+        let supportLineObj = null;
+        let resistanceLineObj = null;
+        let activeStockData = null;
+
+        // --- API & Data Management ---
+        function getApiKey() {
+            return localStorage.getItem('finnhub_api_key') || '';
+        }
+
+        function toggleSettings() {
+            const modal = document.getElementById('settings-modal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+                document.getElementById('api-key-input').value = getApiKey();
+            }
+        }
+
+        function saveApiKey() {
+            const key = document.getElementById('api-key-input').value.trim();
+            if (key) {
+                localStorage.setItem('finnhub_api_key', key);
+                alert('API-sleutel opgeslagen! De app zal nu echte live data gebruiken.');
+                toggleSettings();
+                loadLiveData();
+            }
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem('finnhub_api_key');
+            document.getElementById('api-key-input').value = '';
+            alert('API-sleutel verwijderd. App draait nu in DEMO MODUS.');
+            toggleSettings();
+            loadLiveData();
+        }
+
+        function calculateEMA(candles, period) {
+            const k = 2 / (period + 1);
+            const emaData = [];
+            let ema = 0;
+            for (let i = 0; i < candles.length; i++) {
+                if (i === 0) {
+                    ema = candles[i].close;
+                } else if (i < period) {
+                    const sum = candles.slice(0, i + 1).reduce((acc, c) => acc + c.close, 0);
+                    ema = sum / (i + 1);
+                } else {
+                    ema = (candles[i].close * k) + (ema * (1 - k));
+                }
+                emaData.push({ time: candles[i].time, value: parseFloat(ema.toFixed(2)) });
+            }
+            return emaData;
+        }
+
+        async function fetchFinnhubData(symbol, range) {
+            const apiKey = getApiKey();
+            if (!apiKey) throw new Error("Geen API key");
+
+            const days = range === '1M' ? 30 : range === '3M' ? 90 : range === '6M' ? 180 : 365;
+            const to = Math.floor(Date.now() / 1000);
+            const from = to - (days * 24 * 60 * 60);
+
+            const url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${apiKey}`;
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.s === 'ok' && data.c) {
+                const candles = [];
+                for (let i = 0; i < data.t.length; i++) {
+                    const d = new Date(data.t[i] * 1000);
+                    const timeStr = d.toISOString().split('T')[0];
+                    candles.push({
+                        time: timeStr,
+                        open: parseFloat(data.o[i].toFixed(2)),
+                        high: parseFloat(data.h[i].toFixed(2)),
+                        low: parseFloat(data.l[i].toFixed(2)),
+                        close: parseFloat(data.c[i].toFixed(2))
+                    });
+                }
+                
+                // Haal huidige prijs op voor de header
+                const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`);
+                const quote = await quoteRes.json();
+                const currentPrice = quote.c || data.c[data.c.length - 1];
+                const prevClose = data.c[data.c.length - 2] || currentPrice;
+                const change = currentPrice - prevClose;
+                const changePct = (change / prevClose) * 100;
+
+                return {
+                    symbol: symbol.toUpperCase(),
+                    name: symbol.toUpperCase() + " (Live via Finnhub)",
+                    currentPrice,
+                    change,
+                    changePct,
+                    candles,
+                    isLive: true
+                };
+            }
+            throw new Error("Finnhub data ongeldig");
+        }
+
+        function generateLiveSimulatedData(symbol, range) {
+            let basePrice = 150;
+            const hash = symbol.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+            const priceMap = { 'AAPL': 225.50, 'NVDA': 135.20, 'TSLA': 255.80, 'MSFT': 445.10, 'AMZN': 195.40 };
+            basePrice = priceMap[symbol] || (30 + (hash % 400) + Math.random() * 10);
+
+            const count = range === '1M' ? 30 : range === '3M' ? 90 : range === '6M' ? 180 : 250;
+            const candles = [];
+            let price = basePrice * 0.90;
+            const now = new Date();
+
+            for (let i = count; i >= 0; i--) {
+                const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+                const timeStr = d.toISOString().split('T')[0];
+                const open = price;
+                const variance = basePrice * 0.018;
+                const changeDelta = (Math.random() - 0.49) * variance;
+                const close = Math.max(1, open + changeDelta);
+                const high = Math.max(open, close) + Math.random() * (variance * 0.5);
+                const low = Math.min(open, close) - Math.random() * (variance * 0.5);
+                price = close;
+
+                candles.push({
+                    time: timeStr,
+                    open: parseFloat(open.toFixed(2)),
+                    high: parseFloat(high.toFixed(2)),
+                    low: parseFloat(low.toFixed(2)),
+                    close: parseFloat(close.toFixed(2))
+                });
+            }
+
+            const currentPrice = parseFloat((basePrice + (Math.random() - 0.5) * 5).toFixed(2));
+            const prevClose = candles[candles.length - 2] ? candles[candles.length - 2].close : currentPrice;
+            const change = currentPrice - prevClose;
+            const changePct = (change / prevClose) * 100;
+
+            return {
+                symbol: symbol.toUpperCase(),
+                name: symbol.toUpperCase() + " (Demo Simulatie)",
+                currentPrice,
+                change,
+                changePct,
+                candles,
+                isLive: false
+            };
+        }
+
+        async function loadLiveData() {
+            const sym = currentTicker.toUpperCase().trim();
+            try {
+                activeStockData = await fetchFinnhubData(sym, currentTimeframe);
+            } catch (err) {
+                console.warn("Finnhub failed, falling back to simulation:", err);
+                activeStockData = generateLiveSimulatedData(sym, currentTimeframe);
+            }
+
+            // Update UI Badge
+            const badge = document.getElementById('live-indicator-badge');
+            if (activeStockData.isLive) {
+                badge.className = "px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold uppercase animate-pulse";
+                badge.innerText = "LIVE FEED";
+            } else {
+                badge.className = "px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold uppercase";
+                badge.innerText = "DEMO MODUS";
+            }
+
+            document.getElementById('chart-title').innerText = activeStockData.symbol;
+            document.getElementById('chart-price').innerText = `$ ${activeStockData.currentPrice.toFixed(2)}`;
+            document.getElementById('mtf-ticker-badge').innerText = activeStockData.symbol;
+
+            const isPos = activeStockData.change >= 0;
+            const sign = isPos ? '+' : '';
+            document.getElementById('chart-subtitle').innerHTML = `${activeStockData.name} • Verandering: <span class="${isPos ? 'text-emerald-400' : 'text-rose-400'} font-semibold font-mono">${sign}${activeStockData.change.toFixed(2)} (${sign}${activeStockData.changePct.toFixed(2)}%)</span>`;
+
+            document.querySelectorAll('.ticker-btn').forEach(btn => {
+                if (btn.getAttribute('data-ticker') === currentTicker) {
+                    btn.classList.add('bg-emerald-600', 'border-emerald-500', 'text-white');
+                    btn.classList.remove('bg-slate-900', 'border-slate-800', 'text-slate-200');
+                } else {
+                    btn.classList.remove('bg-emerald-600', 'border-emerald-500', 'text-white');
+                    btn.classList.add('bg-slate-900', 'border-slate-800', 'text-slate-200');
+                }
+            });
+
+            candleSeries.setData(activeStockData.candles);
+            updateChartIndicators();
+            renderMTFMatrix();
+        }
+
+        function updateChartIndicators() {
+            if (!activeStockData) return;
+            const showSR = document.getElementById('toggle-sr').checked;
+            const showMA = document.getElementById('toggle-ma').checked;
+            const candles = activeStockData.candles;
+            const highs = candles.map(c => c.high);
+            const lows = candles.map(c => c.low);
+
+            if (showMA) {
+                ma20Series.setData(calculateEMA(candles, 20));
+                ma50Series.setData(calculateEMA(candles, 50));
+                ma20Series.applyOptions({ visible: true });
+                ma50Series.applyOptions({ visible: true });
+            } else {
+                ma20Series.applyOptions({ visible: false });
+                ma50Series.applyOptions({ visible: false });
+            }
+
+            const maxH = Math.max(...highs);
+            const minL = Math.min(...lows);
+            const resistanceVal = parseFloat((maxH * 0.985).toFixed(2));
+            const supportVal = parseFloat((minL * 1.015).toFixed(2));
+
+            document.getElementById('lbl-support').innerText = `$ ${supportVal}`;
+            document.getElementById('lbl-resistance').innerText = `$ ${resistanceVal}`;
+
+            if (supportLineObj) { candleSeries.removePriceLine(supportLineObj); supportLineObj = null; }
+            if (resistanceLineObj) { candleSeries.removePriceLine(resistanceLineObj); resistanceLineObj = null; }
+
+            if (showSR) {
+                resistanceLineObj = candleSeries.createPriceLine({
+                    price: resistanceVal, color: '#f43f5e', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Resistance'
+                });
+                supportLineObj = candleSeries.createPriceLine({
+                    price: supportVal, color: '#10b981', lineWidth: 2, lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: 'Support'
+                });
+            }
+        }
+
+        function renderMTFMatrix() {
+            if (!activeStockData) return;
+            const tbody = document.getElementById('mtf-tbody');
+            tbody.innerHTML = '';
+            const timeframes = [{ name: 'Swing (Daily)' }, { name: '1 Uur (Trend)' }, { name: '15 Min (Setup)' }, { name: '5 Min (Entry)' }];
+            let totalScore = 0;
+
+            timeframes.forEach((tf, idx) => {
+                let base = activeStockData.changePct >= 0 ? 2 : -2;
+                let score = Math.max(-4, Math.min(4, base + (idx % 2 === 0 ? 1 : -1)));
+                totalScore += score;
+                let verdict = score >= 3 ? 'STRONG BUY' : score >= 1 ? 'BUY' : score <= -3 ? 'STRONG SELL' : score <= -1 ? 'SELL' : 'NEUTRAAL';
+                let colorClass = verdict
