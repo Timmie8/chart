@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AlphaTrade Pro Live - GitHub Pages Ready</title>
-    <!-- Tailwind CSS -->
+    <title>AlphaTrade Pro Live - Live Finnhub Data</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- TradingView Lightweight Charts -->
     <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .chart-container { position: relative; width: 100%; height: 480px; }
-        /* Custom scrollbar for a pro feel */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 h-full flex flex-col antialiased">
@@ -36,7 +36,12 @@
         </div>
         
         <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
-            <!-- API Key Settings Button -->
+            <!-- API Status Indicator -->
+            <div id="api-status" class="hidden items-center space-x-2 text-xs bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700">
+                <div class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></div>
+                <span class="text-emerald-400 font-semibold">FINNHUB ACTIEF</span>
+            </div>
+
             <button onclick="toggleSettings()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 p-2.5 rounded-xl text-sm transition-all" title="API Instellingen">
                 <i class="fa-solid fa-gear"></i>
             </button>
@@ -55,28 +60,59 @@
         </div>
     </header>
 
-    <!-- Settings Modal (Hidden by default) -->
+    <!-- Settings Modal -->
     <div id="settings-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl p-6 w-full max-w-lg shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-key text-emerald-400"></i> Data Bron Instellingen
+                    <i class="fa-solid fa-key text-emerald-400"></i> Live Data Configuratie
                 </h3>
                 <button onclick="toggleSettings()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
             </div>
-            <p class="text-sm text-slate-400 mb-4">
-                Voor <strong>100% echte live data</strong> op GitHub Pages, voer een gratis Finnhub API-sleutel in. 
-                Zonder sleutel werkt de app in <span class="text-amber-400 font-semibold">DEMO MODUS</span> (gesimuleerde data).
-            </p>
-            <input type="text" id="api-key-input" placeholder="Plak je Finnhub API key hier..." 
-                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white mb-4 focus:border-emerald-500 focus:outline-none font-mono">
-            <div class="flex gap-3">
-                <button onclick="saveApiKey()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg font-semibold text-sm transition-all">Opslaan</button>
-                <button onclick="clearApiKey()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg font-semibold text-sm transition-all">Wissen</button>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+                <h4 class="text-sm font-bold text-emerald-400 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info"></i> Hoe werkt het?
+                </h4>
+                <ol class="text-sm text-slate-300 space-y-2 list-decimal list-inside">
+                    <li>Ga naar <a href="https://finnhub.io/register" target="_blank" class="text-emerald-400 hover:underline font-semibold">finnhub.io/register</a> (gratis account)</li>
+                    <li>Na registratie zie je je <strong>API Key</strong> op het dashboard</li>
+                    <li>Kopieer de key (bv. <code class="text-xs bg-slate-800 px-1 rounded">cxxxxxxxxxxxxxxxxxxxxxx</code>)</li>
+                    <li>Plak de key hieronder en klik op "Test & Opslaan"</li>
+                </ol>
+                <p class="text-xs text-slate-500 mt-3">
+                    <i class="fa-solid fa-shield-halved text-slate-600"></i> Je key wordt alleen lokaal in je browser opgeslagen (localStorage) en nooit naar een server gestuurd.
+                </p>
             </div>
-            <p class="text-xs text-slate-500 mt-4 text-center">
-                Haal een gratis sleutel op via <a href="https://finnhub.io/register" target="_blank" class="text-emerald-400 hover:underline">finnhub.io/register</a> (60 verzoeken/minuut gratis).
-            </p>
+
+            <div class="space-y-3">
+                <div class="relative">
+                    <label class="text-xs text-slate-400 font-semibold uppercase mb-1 block">Finnhub API Key</label>
+                    <input type="password" id="api-key-input" placeholder="Plak je Finnhub API key hier..." 
+                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white focus:border-emerald-500 focus:outline-none font-mono">
+                    <button onclick="togglePasswordVisibility()" class="absolute right-3 top-7 text-slate-400 hover:text-white">
+                        <i class="fa-solid fa-eye" id="password-toggle-icon"></i>
+                    </button>
+                </div>
+
+                <!-- Test Result -->
+                <div id="test-result" class="hidden p-3 rounded-lg border text-sm">
+                    <!-- Dynamic content -->
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="testAndSaveApiKey()" id="save-btn" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-vial"></i> Test & Opslaan
+                    </button>
+                    <button onclick="clearApiKey()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2.5 rounded-lg font-semibold text-sm transition-all flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-trash"></i> Wissen
+                    </button>
+                </div>
+
+                <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-xs text-amber-200">
+                    <strong class="text-amber-400">Gratis limiet:</strong> 60 API calls per minuut. Voldoende voor normaal gebruik.
+                </div>
+            </div>
         </div>
     </div>
 
@@ -91,12 +127,15 @@
                 <button onclick="selectTicker('TSLA')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="TSLA">TSLA</button>
                 <button onclick="selectTicker('MSFT')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="MSFT">MSFT</button>
                 <button onclick="selectTicker('AMZN')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="AMZN">AMZN</button>
+                <button onclick="selectTicker('GOOGL')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="GOOGL">GOOGL</button>
+                <button onclick="selectTicker('META')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="META">META</button>
+                <button onclick="selectTicker('AMD')" class="ticker-btn px-3 py-1.5 rounded-lg border border-slate-800 bg-slate-900 hover:bg-slate-800 text-white font-medium transition-colors" data-ticker="AMD">AMD</button>
             </div>
 
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-4 mb-4 border-b border-slate-800 gap-4">
                     <div>
-                        <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-3 flex-wrap">
                             <h2 id="chart-title" class="text-xl font-bold text-white font-mono">AAPL</h2>
                             <span id="chart-price" class="text-xl font-bold text-emerald-400 font-mono">$0.00</span>
                             <span id="live-indicator-badge" class="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold uppercase">DEMO MODUS</span>
@@ -168,11 +207,12 @@
             <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
                 <h4 class="text-sm font-bold text-white flex items-center space-x-2">
                     <i class="fa-solid fa-circle-info text-blue-400"></i>
-                    <span>Over deze App</span>
+                    <span>Live Data Status</span>
                 </h4>
-                <p class="text-xs text-slate-300 leading-relaxed">
-                    Geoptimaliseerd voor <strong>GitHub Pages</strong>. Voeg een gratis Finnhub API-sleutel toe via het ⚙️ icoon voor echte live marktdata. Zonder sleutel wordt een realistische simulatie getoond.
-                </p>
+                <div id="data-source-info" class="text-xs text-slate-300 leading-relaxed">
+                    <p class="mb-2">De app draait momenteel in <strong class="text-amber-400">DEMO MODUS</strong> met gesimuleerde data.</p>
+                    <p>Klik op <i class="fa-solid fa-gear"></i> hierboven om je gratis <strong>Finnhub API key</strong> toe te voegen voor echte live marktdata.</p>
+                </div>
             </div>
         </div>
     </main>
@@ -187,10 +227,36 @@
         let supportLineObj = null;
         let resistanceLineObj = null;
         let activeStockData = null;
+        let isApiConfigured = false;
 
-        // --- API & Data Management ---
+        // --- API Management ---
         function getApiKey() {
             return localStorage.getItem('finnhub_api_key') || '';
+        }
+
+        function updateApiStatus() {
+            const key = getApiKey();
+            const statusEl = document.getElementById('api-status');
+            const infoEl = document.getElementById('data-source-info');
+            
+            if (key && key.length > 10) {
+                isApiConfigured = true;
+                statusEl.classList.remove('hidden');
+                statusEl.classList.add('flex');
+                infoEl.innerHTML = `
+                    <p class="mb-2"><i class="fa-solid fa-check-circle text-emerald-400"></i> <strong class="text-emerald-400">Finnhub API is actief</strong></p>
+                    <p>Echte live marktdata wordt opgehaald. Data ververs elke 60 seconden.</p>
+                    <p class="text-xs text-slate-500 mt-2">Key: ${key.substring(0, 4)}...${key.substring(key.length - 4)}</p>
+                `;
+            } else {
+                isApiConfigured = false;
+                statusEl.classList.add('hidden');
+                statusEl.classList.remove('flex');
+                infoEl.innerHTML = `
+                    <p class="mb-2">De app draait momenteel in <strong class="text-amber-400">DEMO MODUS</strong> met gesimuleerde data.</p>
+                    <p>Klik op <i class="fa-solid fa-gear"></i> hierboven om je gratis <strong>Finnhub API key</strong> toe te voegen.</p>
+                `;
+            }
         }
 
         function toggleSettings() {
@@ -198,25 +264,97 @@
             modal.classList.toggle('hidden');
             if (!modal.classList.contains('hidden')) {
                 document.getElementById('api-key-input').value = getApiKey();
+                document.getElementById('test-result').classList.add('hidden');
             }
         }
 
-        function saveApiKey() {
-            const key = document.getElementById('api-key-input').value.trim();
-            if (key) {
+        function togglePasswordVisibility() {
+            const input = document.getElementById('api-key-input');
+            const icon = document.getElementById('password-toggle-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        async function testApiKey(apiKey) {
+            try {
+                // Test met een simpele quote request voor AAPL
+                const testUrl = `https://finnhub.io/api/v1/quote?symbol=AAPL&token=${apiKey}`;
+                const res = await fetch(testUrl);
+                
+                if (res.status === 401 || res.status === 403) {
+                    return { success: false, error: 'Ongeldige API key. Controleer je key op finnhub.io.' };
+                }
+                if (res.status === 429) {
+                    return { success: false, error: 'Te veel verzoeken. Wacht 1 minuut en probeer opnieuw.' };
+                }
+                if (!res.ok) {
+                    return { success: false, error: `Server error (${res.status}). Probeer later opnieuw.` };
+                }
+                
+                const data = await res.json();
+                if (data && typeof data.c === 'number') {
+                    return { success: true, message: `Succes! AAPL live prijs: $${data.c.toFixed(2)}` };
+                }
+                return { success: false, error: 'Onverwachte response van API.' };
+            } catch (err) {
+                return { success: false, error: `Netwerk error: ${err.message}. Controleer je internetverbinding.` };
+            }
+        }
+
+        async function testAndSaveApiKey() {
+            const input = document.getElementById('api-key-input');
+            const key = input.value.trim();
+            const resultEl = document.getElementById('test-result');
+            const btn = document.getElementById('save-btn');
+            
+            if (!key) {
+                resultEl.className = 'p-3 rounded-lg border text-sm bg-rose-500/10 border-rose-500/30 text-rose-300';
+                resultEl.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Vul een API key in.';
+                resultEl.classList.remove('hidden');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testen...';
+            resultEl.classList.add('hidden');
+
+            const test = await testApiKey(key);
+            
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-vial"></i> Test & Opslaan';
+
+            if (test.success) {
                 localStorage.setItem('finnhub_api_key', key);
-                alert('API-sleutel opgeslagen! De app zal nu echte live data gebruiken.');
-                toggleSettings();
-                loadLiveData();
+                resultEl.className = 'p-3 rounded-lg border text-sm bg-emerald-500/10 border-emerald-500/30 text-emerald-300';
+                resultEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> ${test.message}<br><small class="text-emerald-400/80">Key opgeslagen. Sluit dit venster om live data te laden.</small>`;
+                resultEl.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    toggleSettings();
+                    updateApiStatus();
+                    loadLiveData();
+                }, 1500);
+            } else {
+                resultEl.className = 'p-3 rounded-lg border text-sm bg-rose-500/10 border-rose-500/30 text-rose-300';
+                resultEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${test.error}`;
+                resultEl.classList.remove('hidden');
             }
         }
 
         function clearApiKey() {
             localStorage.removeItem('finnhub_api_key');
             document.getElementById('api-key-input').value = '';
-            alert('API-sleutel verwijderd. App draait nu in DEMO MODUS.');
+            document.getElementById('test-result').classList.add('hidden');
+            updateApiStatus();
+            alert('API key verwijderd. App draait nu in DEMO MODUS.');
             toggleSettings();
-            loadLiveData();
         }
 
         function calculateEMA(candles, period) {
@@ -237,57 +375,75 @@
             return emaData;
         }
 
+        // --- Finnhub Live Data Fetch ---
         async function fetchFinnhubData(symbol, range) {
             const apiKey = getApiKey();
-            if (!apiKey) throw new Error("Geen API key");
+            if (!apiKey) throw new Error("Geen API key geconfigureerd");
 
             const days = range === '1M' ? 30 : range === '3M' ? 90 : range === '6M' ? 180 : 365;
             const to = Math.floor(Date.now() / 1000);
             const from = to - (days * 24 * 60 * 60);
 
-            const url = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${apiKey}`;
-            const res = await fetch(url);
-            const data = await res.json();
-
-            if (data.s === 'ok' && data.c) {
-                const candles = [];
-                for (let i = 0; i < data.t.length; i++) {
-                    const d = new Date(data.t[i] * 1000);
-                    const timeStr = d.toISOString().split('T')[0];
-                    candles.push({
-                        time: timeStr,
-                        open: parseFloat(data.o[i].toFixed(2)),
-                        high: parseFloat(data.h[i].toFixed(2)),
-                        low: parseFloat(data.l[i].toFixed(2)),
-                        close: parseFloat(data.c[i].toFixed(2))
-                    });
-                }
-                
-                // Haal huidige prijs op voor de header
-                const quoteRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`);
-                const quote = await quoteRes.json();
-                const currentPrice = quote.c || data.c[data.c.length - 1];
-                const prevClose = data.c[data.c.length - 2] || currentPrice;
-                const change = currentPrice - prevClose;
-                const changePct = (change / prevClose) * 100;
-
-                return {
-                    symbol: symbol.toUpperCase(),
-                    name: symbol.toUpperCase() + " (Live via Finnhub)",
-                    currentPrice,
-                    change,
-                    changePct,
-                    candles,
-                    isLive: true
-                };
+            // Fetch historical candles
+            const candleUrl = `https://finnhub.io/api/v1/stock/candle?symbol=${symbol}&resolution=D&from=${from}&to=${to}&token=${apiKey}`;
+            const candleRes = await fetch(candleUrl);
+            
+            if (candleRes.status === 429) throw new Error("API rate limit bereikt");
+            if (!candleRes.ok) throw new Error(`API error: ${candleRes.status}`);
+            
+            const candleData = await candleRes.json();
+            
+            if (candleData.s !== 'ok' || !candleData.c) {
+                throw new Error("Geen candle data ontvangen");
             }
-            throw new Error("Finnhub data ongeldig");
+
+            const candles = [];
+            for (let i = 0; i < candleData.t.length; i++) {
+                const d = new Date(candleData.t[i] * 1000);
+                const timeStr = d.toISOString().split('T')[0];
+                candles.push({
+                    time: timeStr,
+                    open: parseFloat(candleData.o[i].toFixed(2)),
+                    high: parseFloat(candleData.h[i].toFixed(2)),
+                    low: parseFloat(candleData.l[i].toFixed(2)),
+                    close: parseFloat(candleData.c[i].toFixed(2))
+                });
+            }
+
+            // Fetch current quote for real-time price
+            const quoteUrl = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${apiKey}`;
+            const quoteRes = await fetch(quoteUrl);
+            const quote = await quoteRes.json();
+            
+            const currentPrice = quote.c || candles[candles.length - 1]?.close || 0;
+            const prevClose = quote.pc || candles[candles.length - 2]?.close || currentPrice;
+            const change = currentPrice - prevClose;
+            const changePct = prevClose ? (change / prevClose) * 100 : 0;
+
+            // Fetch company profile for name
+            let companyName = symbol.toUpperCase();
+            try {
+                const profileUrl = `https://finnhub.io/api/v1/stock/profile2?symbol=${symbol}&token=${apiKey}`;
+                const profileRes = await fetch(profileUrl);
+                const profile = await profileRes.json();
+                if (profile.name) companyName = profile.name;
+            } catch (e) {}
+
+            return {
+                symbol: symbol.toUpperCase(),
+                name: companyName,
+                currentPrice,
+                change,
+                changePct,
+                candles,
+                isLive: true
+            };
         }
 
         function generateLiveSimulatedData(symbol, range) {
             let basePrice = 150;
             const hash = symbol.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
-            const priceMap = { 'AAPL': 225.50, 'NVDA': 135.20, 'TSLA': 255.80, 'MSFT': 445.10, 'AMZN': 195.40 };
+            const priceMap = { 'AAPL': 225.50, 'NVDA': 135.20, 'TSLA': 255.80, 'MSFT': 445.10, 'AMZN': 195.40, 'GOOGL': 180.20, 'META': 535.00, 'AMD': 160.00, 'NFLX': 670.00 };
             basePrice = priceMap[symbol] || (30 + (hash % 400) + Math.random() * 10);
 
             const count = range === '1M' ? 30 : range === '3M' ? 90 : range === '6M' ? 180 : 250;
@@ -334,17 +490,20 @@
         async function loadLiveData() {
             const sym = currentTicker.toUpperCase().trim();
             try {
-                activeStockData = await fetchFinnhubData(sym, currentTimeframe);
+                if (isApiConfigured) {
+                    activeStockData = await fetchFinnhubData(sym, currentTimeframe);
+                } else {
+                    throw new Error("Geen API key");
+                }
             } catch (err) {
-                console.warn("Finnhub failed, falling back to simulation:", err);
+                console.warn("Live data failed, falling back to simulation:", err.message);
                 activeStockData = generateLiveSimulatedData(sym, currentTimeframe);
             }
 
-            // Update UI Badge
             const badge = document.getElementById('live-indicator-badge');
             if (activeStockData.isLive) {
                 badge.className = "px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold uppercase animate-pulse";
-                badge.innerText = "LIVE FEED";
+                badge.innerText = "LIVE DATA";
             } else {
                 badge.className = "px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold uppercase";
                 badge.innerText = "DEMO MODUS";
@@ -424,4 +583,90 @@
                 let score = Math.max(-4, Math.min(4, base + (idx % 2 === 0 ? 1 : -1)));
                 totalScore += score;
                 let verdict = score >= 3 ? 'STRONG BUY' : score >= 1 ? 'BUY' : score <= -3 ? 'STRONG SELL' : score <= -1 ? 'SELL' : 'NEUTRAAL';
-                let colorClass = verdict
+                let colorClass = verdict.includes('BUY') ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : verdict.includes('SELL') ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30' : 'bg-slate-800 text-slate-300';
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="py-2.5 px-2 font-medium text-white">${tf.name}</td>
+                        <td class="py-2.5 px-2"><span class="px-2 py-1 rounded font-bold text-[10px] ${colorClass}">${verdict}</span></td>
+                        <td class="py-2.5 px-2 text-right font-mono text-slate-300">${score > 0 ? '+' + score : score} / 4</td>
+                    </tr>`;
+            });
+
+            totalScore = Math.max(-16, Math.min(16, totalScore + (activeStockData.changePct > 1.0 ? 3 : activeStockData.changePct < -1.0 ? -3 : 0)));
+            document.getElementById('confluence-score').innerText = `${totalScore > 0 ? '+' + totalScore : totalScore} / 16`;
+
+            const verdictEl = document.getElementById('confluence-verdict');
+            if (totalScore >= 6) {
+                verdictEl.className = "text-center font-bold text-sm mt-2.5 py-2 px-3 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+                verdictEl.innerText = "STERK BULLISH CONFLUENTIE";
+            } else if (totalScore <= -6) {
+                verdictEl.className = "text-center font-bold text-sm mt-2.5 py-2 px-3 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30";
+                verdictEl.innerText = "STERK BEARISH CONFLUENTIE";
+            } else {
+                verdictEl.className = "text-center font-bold text-sm mt-2.5 py-2 px-3 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30";
+                verdictEl.innerText = "GEMENGD / NEUTRAAL";
+            }
+        }
+
+        function selectTicker(symbol) {
+            currentTicker = symbol;
+            document.getElementById('custom-ticker-input').value = '';
+            loadLiveData();
+        }
+
+        function submitCustomTicker() {
+            const inputEl = document.getElementById('custom-ticker-input');
+            const inputVal = inputEl.value.trim().toUpperCase();
+            const tickerRegex = /^[A-Z]{1,5}$/;
+            if (tickerRegex.test(inputVal)) {
+                currentTicker = inputVal;
+                inputEl.value = '';
+                loadLiveData();
+            } else {
+                alert("Ongeldige ticker. Gebruik 1 tot 5 letters (bijv. AAPL, NVDA).");
+                inputEl.classList.add('border-rose-500');
+                setTimeout(() => inputEl.classList.remove('border-rose-500'), 2000);
+            }
+        }
+
+        function changeTimeframe(tf, btn) {
+            currentTimeframe = tf;
+            document.querySelectorAll('.tf-btn').forEach(b => {
+                b.classList.remove('bg-emerald-600', 'text-white', 'font-bold');
+                b.classList.add('text-slate-400');
+            });
+            btn.classList.add('bg-emerald-600', 'text-white', 'font-bold');
+            btn.classList.remove('text-slate-400');
+            loadLiveData();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const chartContainer = document.getElementById('tradingview-chart');
+            tvChart = LightweightCharts.createChart(chartContainer, {
+                width: chartContainer.clientWidth,
+                height: 480,
+                layout: { background: { type: 'solid', color: '#090d16' }, textColor: '#94a3b8' },
+                grid: { vertLines: { color: '#1e293b' }, horzLines: { color: '#1e293b' } },
+                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+                rightPriceScale: { borderColor: '#334155' },
+                timeScale: { borderColor: '#334155', timeVisible: false },
+            });
+
+            candleSeries = tvChart.addCandlestickSeries({
+                upColor: '#10b981', downColor: '#f43f5e', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#f43f5e'
+            });
+            ma20Series = tvChart.addLineSeries({ color: '#3b82f6', lineWidth: 2, title: 'EMA 20' });
+            ma50Series = tvChart.addLineSeries({ color: '#f59e0b', lineWidth: 2, title: 'EMA 50' });
+
+            new ResizeObserver(entries => {
+                if (entries.length === 0 || !tvChart) return;
+                tvChart.applyOptions({ width: entries[0].contentRect.width, height: entries[0].contentRect.height });
+            }).observe(chartContainer);
+
+            updateApiStatus();
+            loadLiveData();
+        });
+    </script>
+</body>
+</html>
